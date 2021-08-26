@@ -1,0 +1,56 @@
+---
+title: "STAT 380 Final Project Feature Engineering"
+author: "Tyler Applegate"
+output: html_notebook
+---
+
+## Load in libraries.
+```{r}
+library(data.table)
+```
+
+## Read in data.
+```{r}
+test<-fread("./project/volume/data/raw/test_file.csv")
+train<-fread("./project/volume/data/raw/training_data.csv")
+test_emb<-fread("./project/volume/data/raw/test_emb.csv")
+train_emb<-fread("./project/volume/data/raw/training_emb.csv")
+```
+
+## Reorganize data using melt function.
+```{r}
+train$order<-1:nrow(train)
+m_DT<-melt(train,id=c("id","order","text"),variable.name = "reddit")
+m_DT<-m_DT[value==1][order(order)][,.(id,reddit)]
+m_DT$redditInt<-(as.integer(m_DT$reddit)-1)
+m_DT$train<-1
+```
+
+
+## Add reddit / train columns to test.
+```{r}
+test$reddit<-NA
+test<-test[, c("id","reddit")]
+test$redditInt<-NA
+test$train<-0
+```
+
+## Combine train / test and train_emb / test_emb using rbind.
+```{r}
+bind1<-rbind(m_DT, test)
+bind2<-rbind(train_emb,test_emb)
+```
+
+### Combine both previous binds using cbind to create master table. ###
+```{r}
+master<-cbind(bind1,bind2)
+```
+
+## Write to interim data folder.
+```{r}
+fwrite(master,"./project/volume/data/interim/master_data.csv")
+master[1:10]
+```
+
+
+
